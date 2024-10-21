@@ -21,3 +21,7 @@ init the build env \
 ## Step 5
 Bake the bits \
 `bitbake -k core-image-minimal`
+
+## Step 6
+time to run the image \
+`runqemu qemux86-64 slirp nographic`
