@@ -1,0 +1,92 @@
+services:
+  yocto:
+    image: ubuntu:22.04
+    container_name: yocto-builder
+    volumes:
+      - ./yocto:/home/yocto # Optional for data persistence
+    ports:
+      - "2222:22" # Maps port 22 in container to port 2222 on host
+    stdin_open: true
+    tty: true
+    environment:
+      - DEBIAN_FRONTEND=noninteractive
+    command: /bin/bash
+    init: true
+    entrypoint: |
+      bash -c '
+      apt-get update &&
+      apt-get install -y \
+        build-essential \
+        chrpath \
+        cpio \
+        diffstat \
+        gawk \
+        gcc-multilib \
+        git \
+        libsdl1.2-dev \
+        python3 \
+        python3-pexpect \
+        python3-pip \
+        socat \
+        texinfo \
+        unzip \
+        wget \
+        xterm \
+        openssh-server \
+        gawk \
+        wget \
+        git \
+        diffstat \
+        unzip \
+        texinfo \
+        gcc \
+        build-essential \
+        chrpath \
+        socat \
+        cpio \
+        python3 \
+        python3-pip \
+        python3-pexpect \
+        xz-utils \
+        debianutils \
+        iputils-ping \
+        python3-git \
+        python3-jinja2 \
+        python3-subunit \
+        zstd \
+        liblz4-tool \
+        file \
+        locales \
+        libacl1 \
+        sudo &&
+        locale-gen en_US.UTF-8 &&
+      
+      # Create SSH directory for root (if not present)
+      mkdir -p /var/run/sshd &&
+
+      if ! id "yocto" &>/dev/null; then
+        useradd -m -s /bin/bash yocto &&
+        echo "yocto:yocto" | chpasswd &&
+        usermod -aG sudo yocto &&
+        echo "yocto ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+      fi
+      
+      # Set permissions for yocto user home directory
+      mkdir -p /home/yocto/.ssh &&
+      chmod 700 /home/yocto/.ssh &&
+      chown yocto:yocto /home/yocto/.ssh &&
+      chown yocto:yocto /home/yocto &&
+      
+      # Configure SSH for password authentication
+      sed -i "s/#PasswordAuthentication yes/PasswordAuthentication yes/" /etc/ssh/sshd_config &&
+      sed -i "s/PermitRootLogin prohibit-password/PermitRootLogin yes/" /etc/ssh/sshd_config &&
+      
+      # Set /bin/bash as default shell for user
+      chsh -s /bin/bash yocto &&
+      
+      # Restart the SSH service
+      service ssh restart &&
+      
+      # Start bash
+      exec bash'
+
